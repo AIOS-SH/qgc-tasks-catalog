@@ -151,13 +151,8 @@ Create the name of the service account to use
         # Any subsequent(*) commands which fail will cause the shell script to exit immediately
         set -e
         set -x
-        AZ_OPTS=""
-        if [ -z "$RELEASE_UID" ]; then
-          CONTAINER_NAME="test-${NAMESPACE}-${UID}"
-        else
-          CONTAINER_NAME="release-${NAMESPACE}-${RELEASE_UID}-${TIMESTAMP}"
-          AZ_OPTS="--destination-path ${PIPELINE}/${PIPELINE_TASK}"
-        fi
+        
+        CONTAINER_NAME="evidences-${UID}"
         echo -n $CONTAINER_NAME > /tekton/results/container-name
         {{ if not .Values.noGit }}
         cat /git/qgc-git-info | gzip -c > /evidence/git-info.txt.gz
@@ -179,7 +174,7 @@ Create the name of the service account to use
         # Retrieve logs
         python3 /xunit-analyzer/download-logs.py --skip step-upload-evidences step-check-for-defects
         # upload evidences
-        az storage blob upload-batch --source /evidence -d "$CONTAINER_NAME" ${AZ_OPTS}
+        az storage blob upload-batch --source /evidence -d "$CONTAINER_NAME"
         # Set metadata
         az storage container metadata update --name "$CONTAINER_NAME" --metadata `cat /tmp/metadata`
         # done
@@ -301,26 +296,10 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.labels['tekton.dev/pipelineTask']
-      - name: "RELEASE_UID"
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['qgc/release-uid']
       - name: "QUALITY_GATE"
         valueFrom:
           fieldRef:
             fieldPath: metadata.labels['qgc/quality-gate']
-      - name: "RELEASE_NAME"
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['qgc/release-name']
-      - name: "TIMESTAMP"
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.labels['qgc/release-timestamp']
-      - name: "RELEASE_DATE"
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.annotations['qgc/release-date']
       - name: THRESHOLD
         valueFrom:
           fieldRef:
