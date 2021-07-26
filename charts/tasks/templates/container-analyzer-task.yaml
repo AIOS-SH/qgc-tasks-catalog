@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: {{ include "tasks.fullname" . }}-container-analyzer
+  labels:
+    {{- include "tasks.labels" . | nindent 4 }}
+    qgc/type: Internal
+    qgc/kind: Internal
+spec:
+  description: "{{ .Chart.Description }}"
+  params:
+    - name: "container-name"
+      description: "Azure container name"
+  results:
+  {{- include "tasks.defaultResults" . | nindent 4 }}
+  steps:
+    - name: "analyze-container"
+      image: "{{ .Values.global.image.azure.repository }}:{{ .Values.global.image.azure.tag }}"
+      envFrom:
+        - secretRef:
+            name: azure-secret
+      env:
+        - name: "CONTAINER_NAME"
+          value: $(params.container-name)
+        - name: "ASSERTIONS"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.annotations['qgc/task-assertions']
+        - name: "TASK_RUN"
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['tekton.dev/taskRun']
+      volumeMounts:
+        - name: xunit-analyzer
+          mountPath: /xunit-analyzer
+      script: |-
+        /xunit-analyzer/analyze-container.sh
+  volumes:
+    - name: xunit-analyzer
+      configMap:
+        name: "{{ .Release.Name }}"
+        defaultMode: 0755

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: maven
+description: "Maven goals execution"
+type: application
+version: 0.1.0
+appVersion: 3-jdk-11-slim

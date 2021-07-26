@@ -1,0 +1,34 @@
+# Default values for curl.
+
+image:
+  repository: "mcr.microsoft.com/azure-cli"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+type: Healthcheck
+kind: IntegrationTest
+
+noGit: true
+disableParseXunit: true
+disableGlobalHub: true
+
+params:
+  - name: "target-url"
+    description: "Target Url to check with curl"
+  - name: "curl-options"
+    description: "Curl options"
+    default: "-k -s -f"
+
+steps:
+  - name: "curl"
+    command: ["sh", "-c"]
+    args:
+      - |-
+          echo "Testing $(params.target-url)"
+          curl $(params.curl-options) $(params.target-url) > /evidence/home.html
+          rc=$?
+          echo -n 1 > /tekton/results/tests
+          if [ "$rc" -gt "0" ]; then
+            echo -n 1 > /tekton/results/errors
+          fi

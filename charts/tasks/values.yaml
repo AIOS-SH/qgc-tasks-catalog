@@ -1,0 +1,99 @@
+# Default values for pg-client.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  hub: ""
+  pullPolicy: Always
+
+global:
+  proxy:
+    enabled: false
+    protocol: "http"
+    host: my-proxy
+    port: 80
+    noProxy: "localhost,.qgc"
+    nonProxyHosts: "localhost|*.qgc"
+  annotations: {}
+  tasks:
+    annotations:
+      sidecar.istio.io/inject: "false"
+  image:
+    git:
+      repository: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init"
+      tag: "v0.18.1"
+    azure:
+      repository: "mcr.microsoft.com/azure-cli"
+      tag: "2.21.0"
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+annotations: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# Just here to make my IDE happy
+type: ToBeDefined
+kind: ToBeDefined
+noGit: false
+noGlobalConfigMapAndSecret: false
+disableParseXunit: false
+disableGlobalHub: false
+noEvidence: false
+noEnv: false
+steps: []
+sidecar: []
+env: []
+envFrom: []
+volumes: []
+volumeMounts: []
+specificResults: []
+
+persistentVolumeClaim: {}
+# accessModes: ["ReadWriteMany"]
+# resources:
+#   requests:
+#     storage: 1Gi
+# storageClassName: nfs
+
+npmDefaultEnv: {}
+  # Here an example to configure a local npm registry
+  # NPM_REGISTRY: "http://my-nexus-registry/repository/npmjs.org-proxy"
+
+proxyEnv: {}
+  # Here an example to configure the proxy
+  # HTTP_PROXY: &http-proxy "http://my-proxy:3128"
+  # HTTPS_PROXY: *http-proxy
+  # NO_PROXY: &no-proxy "localhost"
+  # http_proxy: *http-proxy
+  # https_proxy: *http-proxy
+  # no_proxy: *no-proxy

@@ -1,0 +1,133 @@
+# Default values for robot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: "sonarsource/sonar-scanner-cli"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+type: SonarScanner
+kind: StaticCodeAnalysis
+
+params:
+  - name: "project-key"
+    default: ""
+    description: "Sonar project key"
+  - name: "project-name"
+    default: ""
+    description: "Sonar project name"
+  - name: "sonar-sources"
+    default: "."
+    description: "Path of source code to scan."
+  - name: "project-version"
+    default: ""
+    description: "Project version analyzing. Take git short hash value if empty."
+
+steps:
+  - name: "mvn-compile"
+    image: "maven:3-jdk-11-slim"
+    script: |-
+      #!/bin/bash
+      java_files_count=`find . -name "*.java" | wc -l`
+      if [ "$java_files_count" = 0 ]; then echo "No java => exiting" ; exit 0 ; fi
+      if [ ! -f sonar-project.properties ] && [ ! -f sonar.properties ]; then
+        echo "WARN: No sonar properties set and maven detected"
+        echo "Generating a default sonar properties file"
+        echo "sonar.sources=src/main" > sonar-project.properties
+        echo "sonar.tests=src/test" >> sonar-project.properties
+        echo "sonar.java.binaries=target" >> sonar-project.properties
+        echo "Using the following sonar-project.properties:"
+        cat sonar-project.properties
+      fi
+      mvn compile -DskipTests=true
+    volumeMounts:
+      - name: maven-cache
+        mountPath: /root/.m2
+  - name: "sonar-analysis"
+    script: |-
+      #!/bin/bash
+      eval $(cat /git/qgc-git-info)
+      ID=$(echo $NAMESPACE | sed 's/.*-//')
+      PROJECT_VERSION=$(params.project-version)
+      if [ -z "${PROJECT_VERSION}" ]; then PROJECT_VERSION="${git_short_hash}" ; fi
+      echo -n "${PROJECT_VERSION}" > /tekton/results/projectVersion
+      SONAR_OPTIONS="-Dsonar.sources=$(params.sonar-sources)"
+      if [ -f sonar-project.properties ] || [ -f sonar.properties ]; then SONAR_OPTIONS="" ; fi
+      sonar-scanner \
+          -Dsonar.projectKey=$(params.project-key) \
+          -Dsonar.projectName="$(params.project-name)" \
+          -Dsonar.projectVersion=${PROJECT_VERSION} \
+          -Dsonar.host.url=http://sonarqube-sonarqube.sonar:9000 \
+          -Dsonar.login=admin \
+          -Dsonar.password=admin \
+          ${SONAR_OPTIONS}
+  - name: "update-status"
+    script: |-
+      #!/bin/bash
+      if [ ! -f .scannerwork/report-task.txt ]; then
+        echo "file '.scannerwork/report-task.txt' does not exist"
+        exit 1
+      fi
+      cp .scannerwork/report-task.txt /evidence
+      echo -n 1 > /tekton/results/tests
+      for line in $(<.scannerwork/report-task.txt)
+      do
+        key=$(echo $line | sed 's/=.*//')
+        value=$(echo $line | sed -E 's/[^=]*=//')
+        echo "$value" > /tekton/results/$key
+      done
+  - name: "wait-for-scan-complete"
+    image: mcr.microsoft.com/azure-cli:2.14.0
+    script: |-
+      #!/bin/bash
+      function c()
+      {
+        curl --user admin:admin "$@"
+      }
+      . /evidence/report-task.txt
+      for((i=0;i<100;i++))
+      do
+        status=$(c -s "$ceTaskUrl" | jq .task.status -r)
+        echo "$status"
+        case "$status" in
+          SUCCESS|FAILED) break ;;
+        esac
+        sleep 5
+      done
+      SONAR_API_URL="http://sonarqube-sonarqube.sonar:9000/api"
+      c -s "${SONAR_API_URL}/project_analyses/search?project=$(params.project-key)&ps=1" > /evidence/analysis.json
+      c -s "${SONAR_API_URL}/qualitygates/project_status?projectKey=$(params.project-key)" > /evidence/status.json
+      c -s "${SONAR_API_URL}/issues/search?componentKeys=$(params.project-key)" > /evidence/issues.json
+
+noGlobalConfigMapAndSecret: true
+disableParseXunit: true
+
+specificResults:
+  - name: projectKey
+    description: Project key in Sonar
+  - name: serverUrl
+    description: Sonar server Url
+  - name: serverVersion
+    description: Sonar server version
+  - name: dashboardUrl
+    description: Dashboard url
+  - name: ceTaskId
+    description: Sonar task id
+  - name: ceTaskUrl
+    description: Sonar task url
+  - name: projectVersion
+    description: Sonar project version
+
+volumes:
+  - name: maven-cache
+    persistentVolumeClaim:
+      claimName: tasks-sonar
+
+persistentVolumeClaim:
+  accessModes: ["ReadWriteMany"]
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: nfs

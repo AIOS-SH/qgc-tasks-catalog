@@ -1,0 +1,33 @@
+image:
+  repository: "maven"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+type: Maven
+kind: IntegrationTest
+
+params:
+  - name: "maven-goals"
+    default: "test"
+    description: "Maven goals to execute"
+  - name: "tests-dir-path"
+    default: "target/surefire-reports"
+    description: "Path to directory that contains generated tests reports"
+
+steps:
+  - name: "maven-exec"
+    timeout: "2h"
+    script: |-
+      mvn -s /maven-settings/settings.xml $(params.maven-goals)
+      cp $(params.tests-dir-path)/* /evidence
+
+
+volumeMounts:
+  - name: maven-settings
+    mountPath: /maven-settings
+
+volumes:
+  - name: maven-settings
+    configMap:
+      name: "tasks-maven"

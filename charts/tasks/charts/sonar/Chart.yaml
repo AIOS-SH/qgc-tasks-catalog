@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sonar
+description: "Source code analysis with Sonar."
+type: application
+version: 0.1.0
+appVersion: 4.6

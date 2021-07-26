@@ -1,0 +1,42 @@
+# Default values for cypress.
+
+image:
+  repository: "cypress/included"
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+type: Cypress
+kind: IntegrationTest
+
+params:
+  - name: "npm-install"
+    description: "Run npm install?"
+    default: "false"
+
+steps:
+  - name: "cypress-check"
+    script: |-
+      set -e
+      # Check if cypress.json file is present
+      # Run using npm if cypress.json file is here
+      if [ ! -f cypress.json ]; then
+        echo "{}" > cypress.json
+      fi
+      # Run npm install?
+      if $(params.npm-install); then npm --registry "$NPM_REGISTRY" install ; fi
+      # run cypress
+      cypress run --reporter junit --reporter-options "mochaFile=${MOCHA_FILE}" | cat
+    env:
+      - name: MOCHA_FILE
+        value: /evidence/mocha/report-[hash].xml
+      - name: CYPRESS_REPORTER
+        value: junit
+      - name: CYPRESS_VIDEOS_FOLDER
+        value: /evidence/videos
+      - name: CYPRESS_SCREENSHOTS_FOLDER
+        value: /evidence/screenshots
+
+envFrom:
+  - configMapRef:
+      name: tasks-npm
