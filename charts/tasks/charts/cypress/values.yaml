@@ -13,11 +13,17 @@ params:
   - name: "npm-install"
     description: "Run npm install?"
     default: "false"
+  - name: "cypress-path"
+    description: "Cypress tests directory"
+    default: "."
 
 steps:
   - name: "cypress-check"
     script: |-
       set -e
+      # Go inside sub-directory
+      cd "$(params.cypress-path)"
+
       # Check if cypress.json file is present
       # Run using npm if cypress.json file is here
       if [ ! -f cypress.json ]; then
