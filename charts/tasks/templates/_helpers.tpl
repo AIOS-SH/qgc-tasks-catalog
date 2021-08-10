@@ -151,8 +151,7 @@ Create the name of the service account to use
         # Any subsequent(*) commands which fail will cause the shell script to exit immediately
         set -e
         set -x
-        
-        CONTAINER_NAME="evidences-${UID}"
+
         echo -n $CONTAINER_NAME > /tekton/results/container-name
         {{ if not .Values.noGit }}
         cat /git/qgc-git-info | gzip -c > /evidence/git-info.txt.gz
@@ -304,10 +303,10 @@ spec:
         valueFrom:
           fieldRef:
             fieldPath: metadata.labels['qgc/threshold']
-      - name: UID
+      - name: "CONTAINER_NAME"
         valueFrom:
           fieldRef:
-            fieldPath: metadata.uid
+            fieldPath: metadata.labels['qgc/container-name']
       {{- end }}
   volumes:
     {{- if not .Values.noEvidence }}
