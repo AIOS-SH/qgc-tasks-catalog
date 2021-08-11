@@ -11,3 +11,9 @@ HELM_UPGRADE ?= $(shell $(HELM_INSTALL) || echo diff) upgrade --install $(shell 
 
 deploy-tasks:
 	helm $(HELM_UPGRADE) tasks charts/tasks --namespace $(NAMESPACE)
+
+deploy-tasks-everywhere:
+	for ns in `kubectl get ns -l qgc/applicationId -o custom-columns=NAME:.metadata.name --no-headers`; \
+	do \
+		helm $(HELM_UPGRADE) tasks charts/tasks --namespace $$ns ; \
+	done

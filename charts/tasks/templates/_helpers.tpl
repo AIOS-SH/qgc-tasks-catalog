@@ -242,6 +242,12 @@ metadata:
     {{- .Values.global.tasks.annotations | toYaml | nindent 4 }}
 spec:
   description: "{{ .Chart.Description }}"
+  resources:
+    outputs:
+      - name: qgc-notification
+        type: cloudEvent
+        description: "Notification for quality gate center"
+        optional: true
   params:
     {{- if not .Values.noEvidence }}
     - name: threshold
