@@ -97,3 +97,11 @@ proxyEnv: {}
   # http_proxy: *http-proxy
   # https_proxy: *http-proxy
   # no_proxy: *no-proxy
+
+gitSecrets:
+  source: qgc-secrets
+  definition:
+    - name: github
+      url: https://github.com
+    - name: gitlab
+      url: https://gitlab.com
