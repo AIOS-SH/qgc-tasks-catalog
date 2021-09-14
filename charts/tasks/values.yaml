@@ -25,10 +25,10 @@ global:
   image:
     git:
       repository: "gcr.io/tekton-releases/github.com/tektoncd/pipeline/cmd/git-init"
-      tag: "v0.18.1"
+      tag: "v0.21.0"
     azure:
       repository: "mcr.microsoft.com/azure-cli"
-      tag: "2.21.0"
+      tag: "2.28.0"
 
 podSecurityContext: {}
   # fsGroup: 2000

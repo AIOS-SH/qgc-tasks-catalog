@@ -3,4 +3,4 @@ name: curl
 description: "Test with curl."
 type: application
 version: 0.1.0
-appVersion: 2.22.1
+appVersion: 2.28.0
