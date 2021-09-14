@@ -15,5 +15,7 @@ deploy-tasks:
 deploy-tasks-everywhere:
 	for ns in `kubectl get ns -l qgc/applicationId -o custom-columns=NAME:.metadata.name --no-headers`; \
 	do \
-		helm $(HELM_UPGRADE) tasks charts/tasks --namespace $$ns ; \
+		echo "Deploying in $$ns ..." && \
+		helm $(HELM_UPGRADE) tasks charts/tasks --namespace $$ns || exit 1 ; \
+		echo ; \
 	done
